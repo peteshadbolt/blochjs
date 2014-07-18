@@ -1,4 +1,6 @@
 blochjs
 =======
 
-Block sphere using WebGL and Python
+Bloch sphere using WebGL and Python
+
+![screenshot](screenshot.png)
