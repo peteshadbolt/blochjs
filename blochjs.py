@@ -6,10 +6,9 @@ import json
 def sphere(x,y,z,radius=0.03,color='red'): 
     return {'type':'sphere', 'position': {'x':x, 'y':y, 'z':z}, 'radius':radius, 'color':color}
 
-def cylinder(x1,y1,z1,x2,y2,z2, radius,color): return {'type':'cylinder', \
+def cylinder(x1,y1,z1, x2,y2,z2, radius=.02,color='red'): return {'type':'cylinder', \
         'start': {'x':x1, 'y':y1, 'z':z1},
         'end': {'x':x2, 'y':y2, 'z':z2}, 'radius':radius, 'color':color}
-
 
 class Proxy(SimpleHTTPRequestHandler):
     geometry=[]

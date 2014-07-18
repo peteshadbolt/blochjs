@@ -1,35 +1,31 @@
 var camera, controls, scene, renderer, material;
-var vertices=[];
-var edges=[];
 
 // Run on startup
 $(document).ready(main);
-
-function de2ra(degree)  { return degree*(Math.PI/180); }
 
 function addSphere(pos, radius, color, quality, opacity) {
     if (quality==null){quality=10;}
     var material = new THREE.MeshLambertMaterial({color:color});
     if (opacity!=null){material.opacity=opacity; material.transparent=true;}
     var geometry=new THREE.SphereGeometry(radius, quality, quality)
-    var sphere = new THREE.Mesh(geometry, material);
+    var sphere=new THREE.Mesh(geometry, material);
     sphere.position.set(pos.x, pos.y, pos.z);
     scene.add(sphere);
-    vertices.push(sphere);
 }
 
 function addCylinder(start, end, radius, color, opacity) {
+    var pointStart = new THREE.Vector3(start.x, start.y, start.z);
+    var pointEnd = new THREE.Vector3(end.x, end.y, end.z);
     var material = new THREE.MeshLambertMaterial({color:color});
     if (opacity!=null){material.opacity=opacity; material.transparent=true;}
-    var length = Math.pow((end.x-start.x), 2) + Math.pow((end.y-start.y), 2) + Math.pow((end.z-start.z), 2)
-    length = Math.sqrt(length);
-    var geometry = new THREE.CylinderGeometry(radius, radius, length, 8);
+    var direction = new THREE.Vector3().subVectors(pointEnd, pointStart);
+    var arrow = new THREE.ArrowHelper(direction.clone().normalize(), pointStart);
+    var rotation = new THREE.Euler().setFromQuaternion(arrow.quaternion);
+    var geometry = new THREE.CylinderGeometry(radius, radius, direction.length(), 8);
     var cylinder = new THREE.Mesh(geometry, material);
-    cylinder.position.set((start.x+end.x)/2, (start.y+end.y)/2, (start.z+end.z)/2);
-    cylinder.rotation.z=-Math.atan2(end.x-start.x, end.y-start.y);
-    cylinder.rotation.x=Math.atan2(end.z-start.z, end.y-start.y);
+    cylinder.rotation.set(rotation.x, rotation.y, rotation.z);
+    cylinder.position = new THREE.Vector3().addVectors(pointStart, direction.multiplyScalar(0.5));
     scene.add(cylinder);
-    edges.push(cylinder);
 }
 
 function onGeometry(data) {
@@ -50,6 +46,8 @@ function onGeometry(data) {
 function buildAxes() {
     var l=1.1;
     var r=0.005
+
+    // Axes and big sphere
     addCylinder({x:-l, y:0, z:0}, {x:l, y:0, z:0}, r, 'black');
     addCylinder({x:0, y:-l, z:0}, {x:0, y:l, z:0}, r, 'black');
     addCylinder({x:0, y:0, z:-l}, {x:0, y:0, z:l}, r, 'black');
@@ -72,22 +70,30 @@ function buildAxes() {
 
 }
 
-function main() {
-    // Set up the container and renderer
-    var $container = $('body');
-    var w=window,d=document,e=d.documentElement,g=d.getElementsByTagName('body')[0],x=w.innerWidth||e.clientWidth||g.clientWidth,y=w.innerHeight||e.clientHeight||g.clientHeight;
-    var WIDTH=x;
-    var HEIGHT=y;
+function fillScreen(){
+    // Fill the whole screen
+    console.log('eh');
+    var $container = $('#container')
+    var viewportWidth = $(window).width();
+    var viewportHeight = $(window).height();
+    $container.width(viewportWidth);
+    $container.height(viewportHeight);
+    renderer.setSize(viewportWidth, viewportHeight);
+    camera.aspect = viewportWidth/viewportHeight;
+    camera.updateProjectionMatrix();
+    render();
+}
 
+function main() {
     // Renderer
+    var $container = $('#container')
     renderer = new THREE.WebGLRenderer( { antialias: true });
-    renderer.setSize(WIDTH, HEIGHT-20);
     renderer.setClearColor( 0xffffff, 1 );
     $container.append(renderer.domElement);
     scene = new THREE.Scene();
 
     // Camera and lighting
-    camera = new THREE.PerspectiveCamera(45, WIDTH/HEIGHT, 0.1, 10000);
+    camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
     var d=2.3;
     camera.position.set(d,d,d);
     scene.add(camera);
@@ -95,7 +101,7 @@ function main() {
     pointLight.intensity=.8; pointLight.position.set(100,100,130); scene.add(pointLight);
     var pointLight2 = new THREE.PointLight(0xeeeeee);
     pointLight.intensity=.95; pointLight.position.set(50,100,130); scene.add(pointLight);
-
+    fillScreen();
 
     // Controls and axes
     controls = new THREE.OrbitControls(camera);
@@ -104,9 +110,11 @@ function main() {
     controls.addEventListener('change', render);
     controls.userPanSpeed=.05;
 
+    // Bind window resize events 
+    $(window).resize(fillScreen);
+
     // Load the json
     $.getJSON('geometry', onGeometry);
-
 }
 
 function animate(){
@@ -116,5 +124,6 @@ function animate(){
 
 function render() {
     renderer.render(scene, camera);
+    console.log('Render');
 }
 
